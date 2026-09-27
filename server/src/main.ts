@@ -1,5 +1,6 @@
 import express from "express"
 import { connectDB, disconnectDB } from "./utils/database.js"
+import userRouter from "./modules/user/user.routes.js"
 
 
 const app = express()
@@ -7,6 +8,8 @@ const app = express()
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+
+app.use(userRouter)
 
 const port: number = Number(process.env.PORT) || 4000
 
