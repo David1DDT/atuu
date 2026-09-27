@@ -1,0 +1,15 @@
+# ignore system files
+.DS_Store
+
+# ignore .env
+
+.env
+
+
+# ignore node modules
+
+node_modules/
+
+# ignore output
+dist/
+
