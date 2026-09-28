@@ -217,19 +217,71 @@ type roomsType = {
         password: string,
         gameRunning: boolean,
         game: object,
-        players: object,
+        players: {
+            [username: string]: {
+                id: string,
+                admin: boolean
+            }
+        },
     }
 }
 
 let rooms: roomsType = {}
 
 const game = (socket: Socket) => {
+    // create room by owner
     socket.on("create_room", ({ roomName, password }) => {
         if (typeof password !== "string") {
             return
         }
         const player = socket.player
 
-        rooms = { ...rooms, roomName: { password, gameRunning: false, game: {}, players: { player } } }
+        if (!player) {
+            socket.emit('room_status', { success: false, message: 'Incorrect ceridentials' });
+            return;
+        }
+        rooms = {
+            ...rooms,
+            [roomName]: {
+                password,
+                gameRunning: false,
+                game: {},
+                players: {
+                    [player.username]: { id: player.id, admin: true },
+
+                },
+            },
+        }
+
+        socket.join(roomName)
+
+        socket.emit('room_status', { success: true, message: `Camera ${roomName} a fost creată.` });
     })
+
+
+    socket.on("join-room", ({ roomName, password }) => {
+        const room = rooms[roomName]
+        if (!room) {
+            socket.emit('room_status', { success: false, message: 'Camera nu există.' });
+            return;
+        }
+
+        if (room.password !== password) {
+            socket.emit('room_status', { success: false, message: 'Parola incorecta.' });
+            return;
+        }
+        const player = socket.player
+
+        if (!player) {
+            socket.emit('room_status', { success: false, message: 'Incorrect ceridentials' });
+            return;
+        }
+        room.players = {
+            ...room.players,
+            [player.username]: { id: player.id, admin: false },
+        }
+
+    })
+
+    socket.on
 }

@@ -5,7 +5,10 @@ import type { ExtendedError } from "socket.io";
 
 declare module "socket.io" {
     interface Socket {
-        player?: any
+        player?: {
+            username: string,
+            id: string
+        }
     }
 }
 
@@ -39,7 +42,13 @@ export const deserializeUserSocketIO = (socket: Socket, next: (err?: ExtendedErr
     try {
 
         const player = jwt.verify(authHeader, process.env.SECRET_KEY || "secret");
-        socket.player = player;
+        if (typeof player === "string" || typeof player.username !== "string" || typeof player.id !== "string") {
+            return next(new Error("Invalid token payload"))
+        }
+        socket.player = {
+            username: player.username,
+            id: player.id
+        }
 
         next();
     } catch (err) {
