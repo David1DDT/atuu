@@ -210,3 +210,26 @@ const defaultDeck = [
         "value": "A"
     }
 ]
+
+
+type roomsType = {
+    [roomName: string]: {
+        password: string,
+        gameRunning: boolean,
+        game: object,
+        players: object,
+    }
+}
+
+let rooms: roomsType = {}
+
+const game = (socket: Socket) => {
+    socket.on("create_room", ({ roomName, password }) => {
+        if (typeof password !== "string") {
+            return
+        }
+        const player = socket.player
+
+        rooms = { ...rooms, roomName: { password, gameRunning: false, game: {}, players: { player } } }
+    })
+}

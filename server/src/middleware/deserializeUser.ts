@@ -1,7 +1,15 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken"
+import type { Socket } from "socket.io";
+import type { ExtendedError } from "socket.io";
 
-const deserializeUser = (req: Request, res: Response, next: NextFunction) => {
+declare module "socket.io" {
+    interface Socket {
+        player?: any
+    }
+}
+
+export const deserializeUser = (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers.authorization
 
     if (!token) {
@@ -17,4 +25,24 @@ const deserializeUser = (req: Request, res: Response, next: NextFunction) => {
     }
 }
 
-export default deserializeUser
+
+
+
+export const deserializeUserSocketIO = (socket: Socket, next: (err?: ExtendedError) => void) => {
+
+    const authHeader = socket.handshake.headers['authorization'];
+
+    if (!authHeader) {
+        return next(new Error('Autentificare eșuată: Header Authorization lipsă'));
+    }
+
+    try {
+
+        const player = jwt.verify(authHeader, process.env.SECRET_KEY || "secret");
+        socket.player = player;
+
+        next();
+    } catch (err) {
+        return next(new Error('Autentificare eșuată: Token invalid'));
+    }
+};

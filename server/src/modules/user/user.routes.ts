@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { createUser } from "./user.controller.js";
-import deserializeUser from "../../middleware/deserializeUser.js";
+import { deserializeUser } from "../../middleware/deserializeUser.js";
 
 const userRouter = Router()
 
