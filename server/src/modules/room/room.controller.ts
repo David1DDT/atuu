@@ -1,4 +1,5 @@
 import { Socket } from "socket.io";
+import { shuffle } from "./room.service.js";
 
 const defaultDeck = [
     {
@@ -211,12 +212,23 @@ const defaultDeck = [
     }
 ]
 
+type gameType = {
+    atuu: { suit: string, value: string } | { suit: string, value: number },
+    deck: Partial<typeof defaultDeck>,
+    players: {
+        [userName: string]: {
+            cards: Partial<typeof defaultDeck>,
+            current: boolean
+        }
+    }
+
+}
 
 type roomsType = {
     [roomName: string]: {
         password: string,
         gameRunning: boolean,
-        game: object,
+        game: gameType,
         players: {
             [username: string]: {
                 id: string,
@@ -280,8 +292,67 @@ const game = (socket: Socket) => {
             ...room.players,
             [player.username]: { id: player.id, admin: false },
         }
+        socket.join(roomName)
+        socket.emit('player_status', { success: true, message: `Player joined.` });
+
 
     })
 
-    socket.on
+    socket.on("start-game", ({ roomName }) => {
+        const player = socket.player
+
+        if (!player) {
+            socket.emit('room_status', { success: false, message: 'player does not exist' });
+            return;
+        }
+        const username = player.username
+        if (rooms.roomName?.players[username]?.admin !== true) {
+            socket.emit('game_status', { success: false, message: 'player role not admin' });
+            return;
+        }
+
+        const room = rooms.roomName
+
+        if (Object.keys(room.players).length < 2) {
+            socket.emit('game_status', { success: false, message: 'player count needs to be higher than 2' });
+            return;
+        }
+
+        room.gameRunning = true
+        const deck = shuffle(defaultDeck)
+        const atuu = deck.shift()!
+        let players: {
+            [userName: string]: {
+                cards: Partial<typeof defaultDeck>,
+                current: boolean
+            }
+        } = {}
+
+        for (let playerKey of Object.keys(room.players)) {
+
+
+            players = {
+                ...players, [playerKey]: {
+                    cards: deck.splice(0, 4),
+                    current: false
+                }
+            }
+        }
+
+        const firstPlayerKey = Object.keys(players)[0]
+        const firstPlayer = firstPlayerKey ? players[firstPlayerKey] : undefined
+
+        if (firstPlayer) {
+            firstPlayer.current = true
+        }
+
+        room.game = {
+            atuu,
+            deck,
+            players,
+        }
+
+        socket.to(roomName).emit("game_update", game)
+    })
+
 }
